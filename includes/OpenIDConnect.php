@@ -201,7 +201,23 @@ class OpenIDConnect extends PluggableAuth {
 			$this->logger->debug( 'Redirect URL: ' . $redirectURL );
 
 			if ( $oidc->authenticate() ) {
-				$realname = $oidc->requestUserInfo( 'name' );
+
+				//check for custom attributes
+				$name_attr = 'name';
+				$given_name_attr = 'given_name';
+				$family_name_attr = 'family_name';
+				if ( isset( $this->data['name'] ) ) $name_attr =  $this->data['name'];
+				if ( isset( $this->data['given_name'] ) ) $given_name_attr = $this->data['given_name'];
+				if ( isset( $this->data['family_name'] ) ) $family_name_attr = $this->data['family_name'];
+				
+				//get realname
+				$realname = $oidc->requestUserInfo( $name_attr );
+				if ( empty( $realname ) ) {
+					$given_name = $oidc->requestUserInfo( $given_name_attr );
+					$family_name = $oidc->requestUserInfo( $family_name_attr );
+					if ( !empty( $given_name ) || !empty( $family_name ) ) $realname = $given_name . ' ' . $family_name;
+				}
+
 				$email = $oidc->requestUserInfo( 'email' );
 
 				$this->subject = $oidc->requestUserInfo( 'sub' );
